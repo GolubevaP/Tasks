@@ -1,0 +1,37 @@
+/*
+Josephus Permutation solution.
+(https://en.wikipedia.org/wiki/Josephus_problem)
+*/
+
+#include <iterator>
+#include <utility>
+#include <list>
+using namespace std;
+
+template <typename Container, typename ForwardIt>
+ForwardIt Looping(Container& container, ForwardIt pos) {
+    return pos == container.end() ? container.begin() : pos;
+}
+
+template <typename RandomIt>
+void MakeJosephusPermutation(RandomIt first, RandomIt last, uint32_t step_size) {
+    list<typename RandomIt::value_type> pool;
+    for (auto it = first; it != last; ++it) {
+        pool.push_back(move(*it));
+    }
+
+    auto it_cur = pool.begin();
+    while (!pool.empty()) {
+        *(first++) = move(*it_cur);
+        it_cur = pool.erase(it_cur);
+
+        if (pool.empty()) {
+            break;
+        }
+
+        it_cur = Looping(pool, it_cur);
+        for (uint32_t step_i = 1; step_i < step_size; ++step_i) {
+            it_cur = Looping(pool, next(it_cur));
+        }
+    }
+}
