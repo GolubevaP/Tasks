@@ -1,0 +1,119 @@
+/*
+Stats ExploreKeyWords(const set<string>& key_words, istream& input). 
+This function return how many times each keyword appears in the input stream.
+
+key_words — set of key words
+input — input stream, one string — one explored object.
+Stats - struct includes how many times each word from key_words occurs in the input stream
+*/
+
+#include <future>
+#include <map>
+#include <string>
+
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+template <typename Iterator>
+class IteratorRange {
+private:
+    Iterator first, last;
+    size_t _size;
+public:
+    IteratorRange(Iterator f, Iterator l) : first(f), last(l) {
+        _size = std::distance(first, last);
+    }
+
+    Iterator begin() const { return first; }
+    Iterator end() const { return last; }
+    size_t size() const { return _size; }
+};
+
+
+template <typename Iterator>
+class Paginator {
+public:
+    Paginator(Iterator begin, Iterator end, size_t page_size) {
+        for (size_t left = distance(begin, end); left > 0; ) {
+            size_t current_page_size = min(page_size, left);
+            Iterator current_page_end = next(begin, current_page_size);
+            v_itr.push_back({ begin, current_page_end });
+
+            left -= current_page_size;
+            begin = current_page_end;
+        }
+    }
+
+    auto begin() const { return v_itr.begin(); }
+    auto end() const { return v_itr.end(); }
+
+    size_t size() const { return v_itr.size(); }
+
+private:
+    std::vector<IteratorRange<Iterator>> v_itr;
+};
+
+template <typename C>
+auto Paginate(C& c, size_t page_size) {
+    return Paginator{ c.begin(), c.end(), page_size };
+}
+
+
+struct Stats {
+    map<string, int> word_frequences;
+
+    void operator += (const Stats& other) {
+        for (const auto& [word, freq] : other.word_frequences) {
+            word_frequences[word] += freq;
+        }
+    }
+};
+
+Stats CountOneWordFrequency(const string& key, const vector<string>& words) {
+    Stats one_word;
+    int freq = count(words.begin(), words.end(), key);
+    if (freq > 0)
+        one_word.word_frequences[key] = freq;
+    return one_word;
+}
+
+template <typename ContainerOfVectors>
+Stats ExploreString(const set<string>& key_words, const ContainerOfVectors words) {
+    Stats res;
+
+    for (auto it = words.begin(); it != words.end(); ++it) {
+        auto count = key_words.count(*it);
+        if (count > 0) {
+            res.word_frequences[*it] += count;
+        }
+    }
+
+    return res;
+}
+
+vector<string> SplitStreamIntoWords(istream& input) {
+    vector<string> words;
+    string str;
+    while (!input.eof()) {
+        input >> str;
+        words.push_back(move(str));
+    }
+    return words;
+}
+
+Stats ExploreKeyWords(const set<string>& key_words, istream& input) {
+    vector<string> words = SplitStreamIntoWords(input);
+
+    vector<future<Stats>> futures;
+    size_t size = words.size() / 4 + 1;
+    for (auto page : Paginate(words, size)) {
+        futures.push_back(async([&key_words, page] {return ExploreString(key_words, page); }));
+    }
+
+    Stats res;
+    for (auto& f : futures) {
+        res += f.get();
+    }
+    return res;
+}
