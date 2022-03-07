@@ -1,0 +1,41 @@
+/*
+Merge sort without copying
+*/
+
+#include <algorithm>
+#include <memory>
+#include <vector>
+#include <utility>
+
+using namespace std;
+
+template <typename RandomIt>
+void MergeSort(RandomIt range_begin, RandomIt range_end) {	
+	if (range_end - range_begin < 2) {
+		return;
+	}
+
+	vector<typename RandomIt::value_type> temp(
+		make_move_iterator(range_begin), 
+		make_move_iterator(range_end));
+
+	auto first = temp.begin();
+	auto third = temp.size() / 3;
+	auto first_end = first + third;
+	auto second_end = first_end + third;
+	auto last = temp.end();
+
+	MergeSort(first, first_end);
+	MergeSort(first_end, second_end);
+	MergeSort(second_end, last);
+
+	vector<typename RandomIt::value_type> temp2;
+	temp2.reserve(third * 2);
+	merge(make_move_iterator(first), make_move_iterator(first_end),
+		make_move_iterator(first_end), make_move_iterator(second_end),
+		back_inserter(temp2));
+
+	merge(make_move_iterator(temp2.begin()), make_move_iterator(temp2.end()),
+		make_move_iterator(second_end), make_move_iterator(last),
+		range_begin);
+}
