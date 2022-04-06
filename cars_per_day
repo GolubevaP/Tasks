@@ -1,0 +1,48 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+// minutes per day
+#define MIN_PER_DAY 1440
+
+/*
+Returns the maximum number of cars in the parking lot at the same time (during the day)
+    the uint16_t data type was chosen due to the fact that the parking lot, with a high probability, will not fit more than 65.5 thousand cars,
+    if need to scale the solution, can be changed to uint32_t
+carsIntervals - a vector containing pairs of {start, end} values, where
+     start - time of arrival of vehicles to the parking lot,
+     end - the time of departure of vehicles from the parking lot,
+     check-in/out time is transmitted in minutes [0; 24*60],
+     if the car entered the parking lot on the previous day, then start = 0,
+     if the car has not left the parking lot on the current day, then end = 1440
+*/
+
+uint16_t CountCarsPerDayInterval(std::vector<std::pair<uint16_t, uint16_t>> &carsIntervals)
+{
+    // parking is empty
+    if (carsIntervals.empty())
+    {
+        return 0;
+    }
+    
+    // cars per minute counting array
+    uint16_t carsPerMinute[MIN_PER_DAY] = { 0 };
+    
+    for (const auto& interval : carsIntervals)
+    {
+        for (auto i = interval.first; i < interval.second; ++i)
+        {
+            carsPerMinute[i]++;
+        }
+    }
+    
+    return *std::max_element(carsPerMinute, carsPerMinute + MIN_PER_DAY);
+}
+
+/*
+If need to scale the solution
+(get maximum number of cars in the parking lot during the month, for example)
+- call the function from the loop the required number of times,
+- store the returned values in an array,
+- find the maximum value in the array
+*/
